@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"testing"
 )
 
@@ -36,29 +35,19 @@ func setupWithHidden() (files []string, testDir string) {
 	return
 }
 
-func TestPrintDirWithoutHiddenFiles(t *testing.T) {
+func TestReturnFileNamesWithoutHiddenFiles(t *testing.T) {
 	files, testDir := setupWithoutHidden()
 	defer os.RemoveAll(testDir)
-	// Create a buffer to write to and
-	// set output to the buffer
-	var buf bytes.Buffer
-	Config.output = &buf
 	// Clean up after the test run
 	// Sort the test files and join them for the
 	// expected result
 	sort.Slice(files, func(i, j int) bool { return files[i] < files[j] })
-	expected := strings.Join(files, "\n")
-	err := printDir(testDir, false)
+	actual, err := returnFileNames(testDir, false)
 	if err != nil {
 		t.Fatalf("printDir() failed: %s", err)
 	}
-	fmt.Println(buf.String())
-	// Need to call #TrimRight for the result
-	// because fmt.Fprintln appends a \n after each
-	// line, including the last line, but strings.Join does
-	// not append the <sep> after the last item.
-	if strings.Compare(strings.TrimRight(buf.String(), "\n"), expected) != 0 {
-		t.Fatalf("expected %s, got %s", expected, buf.String())
+	if fmt.Sprintf("%v", files) != fmt.Sprintf("%v", actual) {
+		t.Fatalf("expected %s, got %s", files, actual)
 	}
 }
 
@@ -73,17 +62,11 @@ func TestPrintDirWithHiddenFiles(t *testing.T) {
 	// Sort the test files and join them for the
 	// expected result
 	sort.Slice(files, func(i, j int) bool { return files[i] < files[j] })
-	expected := strings.Join(files, "\n")
-	err := printDir(testDir, true)
+	actual, err := returnFileNames(testDir, true)
 	if err != nil {
 		t.Fatalf("printDir() failed: %s", err)
 	}
-	fmt.Println(buf.String())
-	// Need to call #TrimRight for the result
-	// because fmt.Fprintln appends a \n after each
-	// line, including the last line, but strings.Join does
-	// not append the <sep> after the last item.
-	if strings.Compare(strings.TrimRight(buf.String(), "\n"), expected) != 0 {
-		t.Fatalf("expected %s, got %s", expected, buf.String())
+	if fmt.Sprintf("%v", files) != fmt.Sprintf("%v", actual) {
+		t.Fatalf("expected %s, got %s", files, actual)
 	}
 }

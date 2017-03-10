@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -14,18 +15,33 @@ var Config struct {
 	output  io.Writer
 }
 
-func printDir(root string, all bool) error {
+func returnFileNames(root string, all bool) ([]string, error) {
+	var files []string
 	info, err := ioutil.ReadDir(root)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, dir := range info {
 		if all {
-			fmt.Fprintln(Config.output, dir.Name())
+			files = append(files, dir.Name())
 		} else {
 			if []rune(dir.Name())[0] != 46 {
-				fmt.Fprintln(Config.output, dir.Name())
+				files = append(files, dir.Name())
 			}
+		}
+	}
+	return files, nil
+}
+
+func printResults(files []string) error {
+	if len(files) == 0 {
+		return errors.New("The list of files is empty")
+	}
+	for i, file := range files {
+		if i == len(files)-1 {
+			fmt.Fprintf(Config.output, "%v\n", file)
+		} else {
+			fmt.Fprintf(Config.output, "%v ", file)
 		}
 	}
 	return nil
@@ -40,8 +56,10 @@ func init() {
 }
 
 func main() {
+	var files []string
+	var err error
 	if len(flag.Args()) > 0 {
-		err := printDir(flag.Args()[0], Config.allBool)
+		files, err = returnFileNames(flag.Args()[0], Config.allBool)
 		if err != nil {
 			log.Println(err)
 		}
@@ -50,9 +68,13 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
-		err = printDir(dir, Config.allBool)
+		files, err = returnFileNames(dir, Config.allBool)
 		if err != nil {
 			log.Println(err)
 		}
+	}
+	err = printResults(files)
+	if err != nil {
+		log.Println(err)
 	}
 }

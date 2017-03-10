@@ -8,12 +8,44 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
+	"time"
 )
 
 var Config struct {
 	allBool    bool
 	longOutput bool
 	output     io.Writer
+}
+
+type LSFile struct {
+	Name    string
+	Size    int64
+	Mode    os.FileMode
+	ModTime time.Time
+	User    string
+	Group   string
+}
+
+func New(file os.FileInfo) *LSFile {
+	user, err := user.LookupId(file.Sys().Uid)
+	if err != nil {
+		log.Println(err)
+	}
+	group, err := user.LookGroupId(file.Sys().Gid)
+	if err != nil {
+		log.Println(err)
+	}
+	f := &LSFile{
+		Name:    file.Name(),
+		Size:    file.Size(),
+		Mode:    file.Mode(),
+		ModTime: File.ModTime(),
+		User:    user.Name,
+		Group:   group.Name,
+	}
+	return f
+
 }
 
 func returnFiles(root string, all bool) ([]os.FileInfo, error) {
@@ -40,6 +72,7 @@ func printResults(files []os.FileInfo, long bool) error {
 	}
 	for i, file := range files {
 		if long {
+			fmt.Printf("%#v", file.Sys())
 			fmt.Fprintf(Config.output, "%v %v %v %v\n", file.Mode(), file.Size(), file.ModTime().Format("Jan _2 15:04 2006"), file.Name())
 		} else {
 			if i == len(files)-1 {

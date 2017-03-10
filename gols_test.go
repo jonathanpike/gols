@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -37,36 +38,71 @@ func setupWithHidden() (files []string, testDir string) {
 
 func TestReturnFileNamesWithoutHiddenFiles(t *testing.T) {
 	files, testDir := setupWithoutHidden()
-	defer os.RemoveAll(testDir)
 	// Clean up after the test run
+	defer os.RemoveAll(testDir)
 	// Sort the test files and join them for the
 	// expected result
 	sort.Slice(files, func(i, j int) bool { return files[i] < files[j] })
 	actual, err := returnFileNames(testDir, false)
 	if err != nil {
-		t.Fatalf("printDir() failed: %s", err)
+		t.Fatalf("returnFileNames() failed: %s", err)
 	}
 	if fmt.Sprintf("%v", files) != fmt.Sprintf("%v", actual) {
 		t.Fatalf("expected %s, got %s", files, actual)
 	}
 }
 
-func TestPrintDirWithHiddenFiles(t *testing.T) {
+func TestreturnFileNamesWithHiddenFiles(t *testing.T) {
 	files, testDir := setupWithHidden()
+	// Clean up after the test run
+	defer os.RemoveAll(testDir)
+	// Sort the test files
+	sort.Slice(files, func(i, j int) bool { return files[i] < files[j] })
+	actual, err := returnFileNames(testDir, true)
+	if err != nil {
+		t.Fatalf("returnFileNames() failed: %s", err)
+	}
+	if fmt.Sprintf("%v", files) != fmt.Sprintf("%v", actual) {
+		t.Fatalf("expected %s, got %s", files, actual)
+	}
+}
+
+func TestprintResultsWithoutLongOutput(t *testing.T) {
+	files, testDir := setupWithoutHidden()
+	// Clean up after the test run
 	defer os.RemoveAll(testDir)
 	// Create a buffer to write to and
 	// set output to the buffer
 	var buf bytes.Buffer
 	Config.output = &buf
-	// Clean up after the test run
-	// Sort the test files and join them for the
-	// expected result
+	// Sort the test files
 	sort.Slice(files, func(i, j int) bool { return files[i] < files[j] })
-	actual, err := returnFileNames(testDir, true)
+	expected := strings.Join(files, " ")
+	err := printResults(files, false)
 	if err != nil {
-		t.Fatalf("printDir() failed: %s", err)
+		t.Fatalf("printResults() failed: %s", err)
 	}
-	if fmt.Sprintf("%v", files) != fmt.Sprintf("%v", actual) {
-		t.Fatalf("expected %s, got %s", files, actual)
+	if expected != buf.String() {
+		t.Fatalf("expected %s, got %s", expected, buf.String())
+	}
+}
+
+func TestprintResultsWithLongOutput(t *testing.T) {
+	files, testDir := setupWithoutHidden()
+	// Clean up after the test run
+	defer os.RemoveAll(testDir)
+	// Create a buffer to write to and
+	// set output to the buffer
+	var buf bytes.Buffer
+	Config.output = &buf
+	// Sort the test files
+	sort.Slice(files, func(i, j int) bool { return files[i] < files[j] })
+	expected := strings.Join(files, "\n")
+	err := printResults(files, true)
+	if err != nil {
+		t.Fatalf("printResults() failed: %s", err)
+	}
+	if expected != buf.String() {
+		t.Fatalf("expected %s, got %s", expected, buf.String())
 	}
 }

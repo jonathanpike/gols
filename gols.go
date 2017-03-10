@@ -7,20 +7,22 @@ import (
 	"os"
 )
 
-func printDir(dir string) error {
+func printDir(dir string, hidden bool) error {
 	info, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return err
 	}
 	for _, dir := range info {
-		fmt.Println(dir.Name())
+		if []rune(dir.Name())[0] != 46 {
+			fmt.Println(dir.Name())
+		}
 	}
 	return nil
 }
 
 func main() {
 	if len(os.Args) > 1 {
-		err := printDir(os.Args[1])
+		err := printDir(os.Args[1], false)
 		if err != nil {
 			log.Println(err)
 		}
@@ -29,7 +31,7 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
-		err = printDir(dir)
+		err = printDir(dir, false)
 		if err != nil {
 			log.Println(err)
 		}

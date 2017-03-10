@@ -3,36 +3,45 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
 )
 
-func printDir(dir string, all bool) error {
-	info, err := ioutil.ReadDir(dir)
+var Config struct {
+	allBool bool
+	output  io.Writer
+}
+
+func printDir(root string, all bool) error {
+	info, err := ioutil.ReadDir(root)
 	if err != nil {
 		return err
 	}
 	for _, dir := range info {
 		if all {
-			fmt.Println(dir.Name())
+			fmt.Fprintln(Config.output, dir.Name())
 		} else {
 			if []rune(dir.Name())[0] != 46 {
-				fmt.Println(dir.Name())
+				fmt.Fprintln(Config.output, dir.Name())
 			}
 		}
 	}
 	return nil
 }
 
-func main() {
+func init() {
 	// Command Line Options
-	allBool := flag.Bool("a", false, "do not ignore entries starting with .")
-
+	flag.BoolVar(&Config.allBool, "a", false, "do not ignore entries starting with .")
 	flag.Parse()
+	Config.output = os.Stdout
+	log.SetOutput(os.Stderr)
+}
 
+func main() {
 	if len(flag.Args()) > 0 {
-		err := printDir(flag.Args()[0], *allBool)
+		err := printDir(flag.Args()[0], Config.allBool)
 		if err != nil {
 			log.Println(err)
 		}
@@ -41,7 +50,7 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
-		err = printDir(dir, *allBool)
+		err = printDir(dir, Config.allBool)
 		if err != nil {
 			log.Println(err)
 		}

@@ -16,36 +16,36 @@ var Config struct {
 	output     io.Writer
 }
 
-func returnFileNames(root string, all bool) ([]string, error) {
-	var files []string
+func returnFiles(root string, all bool) ([]os.FileInfo, error) {
+	var files []os.FileInfo
 	info, err := ioutil.ReadDir(root)
 	if err != nil {
 		return nil, err
 	}
-	for _, dir := range info {
+	for _, file := range info {
 		if all {
-			files = append(files, dir.Name())
+			files = append(files, file)
 		} else {
-			if []rune(dir.Name())[0] != 46 {
-				files = append(files, dir.Name())
+			if []rune(file.Name())[0] != 46 {
+				files = append(files, file)
 			}
 		}
 	}
 	return files, nil
 }
 
-func printResults(files []string, long bool) error {
+func printResults(files []os.FileInfo, long bool) error {
 	if len(files) == 0 {
 		return errors.New("The list of files is empty")
 	}
 	for i, file := range files {
 		if long {
-			fmt.Fprintln(Config.output, "%v", file)
+			fmt.Fprintf(Config.output, "%v %v %v %v\n", file.Mode(), file.Size(), file.ModTime().Format("Jan _2 15:04 2006"), file.Name())
 		} else {
 			if i == len(files)-1 {
-				fmt.Fprintf(Config.output, "%v\n", file)
+				fmt.Fprintf(Config.output, "%v\n", file.Name())
 			} else {
-				fmt.Fprintf(Config.output, "%v ", file)
+				fmt.Fprintf(Config.output, "%v ", file.Name())
 			}
 		}
 	}
@@ -64,10 +64,10 @@ func init() {
 func main() {
 	// Grab file names from either specified directory or
 	// the current directory (if no directory is specified)
-	var files []string
+	var files []os.FileInfo
 	var err error
 	if len(flag.Args()) > 0 {
-		files, err = returnFileNames(flag.Args()[0], Config.allBool)
+		files, err = returnFiles(flag.Args()[0], Config.allBool)
 		if err != nil {
 			log.Println(err)
 		}
@@ -76,7 +76,7 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
-		files, err = returnFileNames(dir, Config.allBool)
+		files, err = returnFiles(dir, Config.allBool)
 		if err != nil {
 			log.Println(err)
 		}

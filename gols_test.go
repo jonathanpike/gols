@@ -5,62 +5,68 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
-	"sort"
 	"strings"
 	"testing"
 )
 
-func setupWithoutHidden() (files []string, testDir string) {
+func setupWithoutHidden() (files []os.FileInfo, testDir string) {
 	// Create a test directory, 5 regular test files
 	tmp, _ := ioutil.TempDir("", "test-dir")
 	testDir = tmp
+	var filenames []string
 	for i := 0; i < 5; i++ {
 		file, _ := ioutil.TempFile(testDir, "test-file")
-		files = append(files, filepath.Base(file.Name()))
+		filenames = append(filenames, file.Name())
+	}
+	for _, file := range filenames {
+		info, _ := os.Stat(file)
+		files = append(files, info)
 	}
 	return
 }
 
-func setupWithHidden() (files []string, testDir string) {
+func setupWithHidden() (files []os.FileInfo, testDir string) {
 	// Create a test directory, 5 regular test files,
 	// and 1 hidden file
 	tmp, _ := ioutil.TempDir("", "test-dir")
 	testDir = tmp
+	var filenames []string
 	for i := 0; i < 5; i++ {
 		file, _ := ioutil.TempFile(testDir, "test-file")
-		files = append(files, filepath.Base(file.Name()))
+		filenames = append(filenames, file.Name())
 	}
 	hidden, _ := ioutil.TempFile(testDir, ".file")
-	files = append(files, filepath.Base(hidden.Name()))
+	filenames = append(filenames, hidden.Name())
+	for _, file := range filenames {
+		info, _ := os.Stat(file)
+		files = append(files, info)
+	}
 	return
 }
 
-func TestReturnFileNamesWithoutHiddenFiles(t *testing.T) {
+func TestreturnFilesWithoutHiddenFiles(t *testing.T) {
 	files, testDir := setupWithoutHidden()
 	// Clean up after the test run
 	defer os.RemoveAll(testDir)
 	// Sort the test files and join them for the
 	// expected result
-	sort.Slice(files, func(i, j int) bool { return files[i] < files[j] })
-	actual, err := returnFileNames(testDir, false)
+	actual, err := returnFiles(testDir, false)
 	if err != nil {
-		t.Fatalf("returnFileNames() failed: %s", err)
+		t.Fatalf("returnFiles() failed: %s", err)
 	}
 	if fmt.Sprintf("%v", files) != fmt.Sprintf("%v", actual) {
 		t.Fatalf("expected %s, got %s", files, actual)
 	}
 }
 
-func TestreturnFileNamesWithHiddenFiles(t *testing.T) {
+func TestreturnFilesWithHiddenFiles(t *testing.T) {
 	files, testDir := setupWithHidden()
 	// Clean up after the test run
 	defer os.RemoveAll(testDir)
 	// Sort the test files
-	sort.Slice(files, func(i, j int) bool { return files[i] < files[j] })
-	actual, err := returnFileNames(testDir, true)
+	actual, err := returnFiles(testDir, true)
 	if err != nil {
-		t.Fatalf("returnFileNames() failed: %s", err)
+		t.Fatalf("returnFiles() failed: %s", err)
 	}
 	if fmt.Sprintf("%v", files) != fmt.Sprintf("%v", actual) {
 		t.Fatalf("expected %s, got %s", files, actual)
@@ -76,9 +82,13 @@ func TestprintResultsWithoutLongOutput(t *testing.T) {
 	var buf bytes.Buffer
 	Config.output = &buf
 	// Sort the test files
-	sort.Slice(files, func(i, j int) bool { return files[i] < files[j] })
-	expected := strings.Join(files, " ")
-	err := printResults(files, false)
+	var f []string
+	for _, file := range files {
+		f = append(f, file.Name())
+	}
+	expected := strings.Join(f, " ")
+	actual, _ := returnFiles(testDir, false)
+	err := printResults(actual, false)
 	if err != nil {
 		t.Fatalf("printResults() failed: %s", err)
 	}
@@ -96,9 +106,13 @@ func TestprintResultsWithLongOutput(t *testing.T) {
 	var buf bytes.Buffer
 	Config.output = &buf
 	// Sort the test files
-	sort.Slice(files, func(i, j int) bool { return files[i] < files[j] })
-	expected := strings.Join(files, "\n")
-	err := printResults(files, true)
+	var f []string
+	for _, file := range files {
+		f = append(f, file.Name())
+	}
+	expected := strings.Join(f, " ")
+	actual, _ := returnFiles(testDir, false)
+	err := printResults(actual, false)
 	if err != nil {
 		t.Fatalf("printResults() failed: %s", err)
 	}
